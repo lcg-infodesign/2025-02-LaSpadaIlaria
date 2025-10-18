@@ -8,7 +8,7 @@ function preload() {
 function setup() {
   // Controllo se ho caricato i dati
   let outerPadding = 55; //spazio vuoto tra i bordi del canvas e la griglia di elementi.
-  let padding = 15;  //spazio tra gli elementi (tra una “cella” e l’altra della griglia).
+  let padding = 19;  //spazio tra gli elementi (tra una “cella” e l’altra della griglia).
   let itemSize = 37; //dimensione (lato) di ogni “oggetto” o cella da disegnare.
 
   // Calcolo il numero di colonne
@@ -76,3 +76,91 @@ function setup() {
   }
 }
 
+// FUNZIONE PRINCIPALE PER DISEGNARE I GLIFI
+function drawGlyph(x, y, size, colorValue, rotation) {
+  push(); // Salva lo stato di disegno corrente
+  
+  // Applica trasformazioni
+  translate(x, y);
+  rotate(rotation);
+  
+  // Definisci i colori di base per la famiglia di glifi
+  let baseColor1 = color(1, 107, 97) //colore principale
+  let baseColor2 = color(205, 44, 88) //colore secondario
+  
+  // Interpola tra i due colori in base al valore
+  let glyphColor = lerpColor(baseColor1, baseColor2, colorValue); //lerpColor calcola il valore intermedio. il risultato viene salvato nella variabile glyphColor
+  fill(glyphColor); //qua gli dico di riempirlo in base alla variabile
+  stroke(60); //gli dico che il contorno deve essere grigio
+  strokeWeight(0.3); //in questo caso do lo spessore dello stroke
+  
+  // REGOLE PER LA FAMIGLIA DI GLIFI:
+  // 1. Tutti i glifi hanno un elemento centrale
+  // 2. Tutti i glifi hanno elementi radiali
+  // 3. La complessità aumenta con la dimensione
+  
+  // Elemento centrale (sempre presente)
+  ellipse(0, 0, size * 0.4, size * 0.4); //qui definisco il cerchio dandogli le dimensioni. la dimensione è proporzionale alla grandezza del glifo.
+  
+  // Elementi radiali - numero variabile in base alla dimensione
+  let radialElements = max(3, floor(map(size, 10, 30, 3, 8))); //map(size, 10, 30, 3, 8) → mappa la dimensione del glifo (size) in un numero di bracci tra 3 e 10. size = 5 → 3 bracci. size = 30 → 10 bracci. i valori intermedi sono proporzionali
+  //con max garantisco il numero minimo di bracci=3 anche se la dimensione dovesse essere minore.
+  let angleStep = TWO_PI / radialElements; //calcola l’angolo tra un braccio e l’altro in radianti.
+  
+
+  //CICLO PER DISEGNARE I BRACCI//
+  for (let i = 0; i < radialElements; i++) { 
+    let angle = i * angleStep; //determina la direzione del braccio
+    
+    // Lunghezza delle braccia radiali varia con la dimensione
+    let armLength = size * 0.6;
+    
+    // Calcola la posizione finale del braccio
+    let endX = cos(angle) * armLength;
+    let endY = sin(angle) * armLength;
+    
+    // Disegna il braccio radiale
+    line(0, 0, endX, endY);
+    
+    // Aggiungi elementi terminali ai bracci
+    // La forma varia in base al valore di colore
+    if (colorValue > 0.5) {
+      // se il colore determina un valore alto, maggiore di 0.5 allora crea un'ellissi con queste caratteristiche
+      ellipse(endX, endY, size * 0.15, size * 0.15);
+    } else {
+      // invece se i valori sono minori devi creare dei Rettangoli 
+      push(); //l'ho dovuto mettere per isolare la forma, in questo modo la rotazione e la traslazione non interferiscono
+      translate(endX, endY); //devo portare l'origine alla fine del braccio
+      rotate(angle); //ruoto il rettangolo in modo che segua la rotazione del corpo centrale
+      rectMode(CENTER);
+      rect(0, 0, size * 0.15, size * 0.15);
+      pop();
+    }
+  }
+  
+  // Elementi aggiuntivi per glifi più grandi
+  if (size > 15) { //qui gli sto dicendo di procedere solo se la size è superiore a 15
+    // Anello esterno per glifi di media dimensione
+    noFill();
+    stroke(glyphColor);
+    ellipse(0, 0, size * 0.8, size * 0.8);
+    
+    // Punti sugli angoli per glifi grandi
+    if (size > 20) { //gli dico di procedere solo se la size è superiore a 20
+      fill(glyphColor);
+      noStroke();
+      for (let i = 0; i < radialElements; i++) {
+        let angle = i * angleStep;
+        let pointX = cos(angle) * (size * 0.35); //osizione del punto calcolata lungo la direzione del braccio
+        let pointY = sin(angle) * (size * 0.35);
+        ellipse(pointX, pointY, size * 0.08, size * 0.08);
+      }
+    }
+  }
+  
+  pop(); // Ripristina lo stato di disegno precedente
+}
+
+function draw() {
+  // Non è necessario per questo esempio
+}
